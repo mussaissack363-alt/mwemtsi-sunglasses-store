@@ -206,7 +206,7 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
   const [modelSwappedToSun, setModelSwappedToSun] = useState(false)
 
   /* ---- Load glasses model ---- */
-  const { scene: glassesScene } = useGLTF('/glasses(1).glb')
+  const { scene: glassesScene } = useGLTF(import.meta.env.BASE_URL + 'glasses(1).glb')
   const modelRoot = useMemo(() => glassesScene, [glassesScene])
 
   /* ---- Load sunglasses model ---- */
@@ -214,7 +214,7 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
 
   useEffect(() => {
     const loader = new GLTFLoader()
-    loader.load('/sun_glasses.glb', (gltf) => {
+    loader.load(import.meta.env.BASE_URL + 'sun_glasses.glb', (gltf) => {
       gltf.scene.visible = false
       setSunModelRoot(gltf.scene)
     }, undefined, () => {})

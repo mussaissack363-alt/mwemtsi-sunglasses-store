@@ -1,9 +1,10 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 
+const B = import.meta.env.BASE_URL
 const LIFE_CARDS = [
-  { id: 'life-1', img: '/lifestyle-1.jpg', alt: 'Eyewear lifestyle', caption: 'We care for your vision' },
-  { id: 'life-2', img: '/lifestyle-2.jpg', alt: 'Customer service', caption: 'Excellent service, every time' },
-  { id: 'life-3', img: '/lifestyle-3.jpg', alt: 'Availability', caption: 'Always available for you' },
+  { id: 'life-1', img: B + 'lifestyle-1.jpg', alt: 'Eyewear lifestyle', caption: 'We care for your vision' },
+  { id: 'life-2', img: B + 'lifestyle-2.jpg', alt: 'Customer service', caption: 'Excellent service, every time' },
+  { id: 'life-3', img: B + 'lifestyle-3.jpg', alt: 'Availability', caption: 'Always available for you' },
 ]
 
 const STAGGER_MS = 3000 // guaranteed delay between each photo appearing
