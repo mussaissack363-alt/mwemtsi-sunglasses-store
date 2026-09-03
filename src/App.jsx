@@ -15,7 +15,7 @@ import ScrollBackgrounds from './components/ScrollBackgrounds'
 export default function App() {
   const spacerRef = useRef()
   const { progress, t1, t2 } = useScrollProgress(spacerRef)
-  const { products, removeProduct, addProduct } = useProducts()
+  const { products, removeProduct, addProduct, updateProduct } = useProducts()
 
   const [modelReady, setModelReady] = useState(false)
   const [activePart, setActivePart] = useState(null)
@@ -27,7 +27,7 @@ export default function App() {
 
   const handleCloseDrawer = useCallback(() => {
     // Don't reset the camera during the sunglasses chapter — the glasses model is hidden then
-    if (activePart && activePart !== 'sunglasses' && t2 < 0.65) {
+    if (activePart && activePart !== 'sunglasses' && t2 < 0.28) {
       setRequestResetView(n => n + 1)
     }
     setActivePart(null)
@@ -39,7 +39,8 @@ export default function App() {
   }, [])
 
   const isInspectingGlasses = activePart && activePart !== 'sunglasses'
-  const glassesSettled = t1 >= 0.999 && t2 === 0 && !activePart
+  // Product strip appears late — only after the full rotation finishes (t1 >= 0.92)
+  const glassesSettled = t1 >= 0.92 && t2 === 0 && !activePart
 
   return (
     <>
@@ -51,7 +52,7 @@ export default function App() {
       {/* Chapter backdrops behind the transparent 3D canvas */}
       <ScrollBackgrounds t1={t1} t2={t2} />
 
-      <div ref={spacerRef} className="w-full" style={{ height: `calc(460vh + ${INTRO_VH}vh)` }} aria-hidden="true" />
+      <div ref={spacerRef} className="w-full" style={{ height: `calc(1200vh + ${INTRO_VH}vh)` }} aria-hidden="true" />
 
       <Logo />
       <WhatsAppButton />
@@ -105,8 +106,8 @@ export default function App() {
           onProductClick={handlePartClick}
         />
       )}
-      {/* End of scroll — frames, lenses & sunglasses pop up in the center like the photos */}
-      {t2 >= 0.70 && !activePart && (
+      {/* End of scroll — frames, lenses & sunglasses pop up very late (t2 >= 0.95) */}
+      {t2 >= 0.95 && !activePart && (
         <ProductCollection
           variant="center"
           t2={t2}
@@ -121,6 +122,7 @@ export default function App() {
         products={products}
         onRemove={removeProduct}
         onAdd={addProduct}
+        onUpdate={updateProduct}
       />
     </>
   )

@@ -52,5 +52,16 @@ export function useProducts() {
     })
   }, [save])
 
-  return { products, removeProduct, addProduct }
+  const updateProduct = useCallback((partId, productId, patch) => {
+    setProducts(prev => {
+      const next = {
+        ...prev,
+        [partId]: (prev[partId] || []).map(x => x.id === productId ? { ...x, ...patch, id: productId } : x),
+      }
+      save(next)
+      return next
+    })
+  }, [save])
+
+  return { products, removeProduct, addProduct, updateProduct }
 }

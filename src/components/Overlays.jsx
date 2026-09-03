@@ -69,10 +69,11 @@ export function ScrollHint({ t1, t2 }) {
 export function OutroLine({ t1, t2 }) {
   const opacity = useMemo(() => {
     if (t2 > 0) return 0
-    const outroRaw = t1 < 0.55 ? 0
-      : t1 < 0.65 ? (t1 - 0.55) / 0.10
-      : t1 < 0.70 ? 1
-      : t1 < 0.78 ? 1 - (t1 - 0.70) / 0.08
+    // Shows only at the very end of the glasses chapter, after the full rotation
+    const outroRaw = t1 < 0.88 ? 0
+      : t1 < 0.93 ? (t1 - 0.88) / 0.05
+      : t1 < 0.94 ? 1
+      : t1 < 0.99 ? 1 - (t1 - 0.94) / 0.05
       : 0
     const clearForCh2 = 1 - Math.min(1, t2 * 4)
     return outroRaw * clearForCh2
@@ -99,7 +100,7 @@ export function OutroLine({ t1, t2 }) {
 export function ShopInfo({ t1, t2 }) {
   const reveal = useMemo(() => {
     if (t2 > 0) return 0
-    return Math.max(0, Math.min(1, (t1 - 0.75) / 0.25))
+    return Math.max(0, Math.min(1, (t1 - 0.80) / 0.15))
   }, [t1, t2])
 
   return (
@@ -127,10 +128,12 @@ export function ShopInfo({ t1, t2 }) {
 /* ─── Chapter Fade (full-viewport black overlay, z-25) ────── */
 export function ChapterFade({ t2 }) {
   const opacity = useMemo(() => {
-    if (t2 <= 0 || t2 >= 0.65) return 0
-    if (t2 < 0.15) return t2 / 0.15
-    if (t2 < 0.45) return 1
-    return 1 - (t2 - 0.45) / 0.20
+    // Quick transition at the start of the sunglasses chapter, then pure rotation
+    if (t2 <= 0 || t2 >= 0.38) return 0
+    if (t2 < 0.12) return 0
+    if (t2 < 0.22) return (t2 - 0.12) / 0.10
+    if (t2 < 0.28) return 1
+    return 1 - (t2 - 0.28) / 0.10
   }, [t2])
 
   if (opacity <= 0.01) return null
@@ -146,9 +149,9 @@ export function ChapterFade({ t2 }) {
 /* ─── Transition Words ("Same protection. Different mood.") ─ */
 export function TransitionWords({ t2 }) {
   const opacity = useMemo(() => {
-    if (t2 <= 0.10 || t2 >= 0.50) return 0
-    const fadeIn = Math.min(1, (t2 - 0.10) / 0.08)
-    const fadeOut = t2 < 0.42 ? 1 : Math.max(0, 1 - (t2 - 0.42) / 0.08)
+    if (t2 <= 0.14 || t2 >= 0.36) return 0
+    const fadeIn = Math.min(1, (t2 - 0.14) / 0.06)
+    const fadeOut = t2 < 0.30 ? 1 : Math.max(0, 1 - (t2 - 0.30) / 0.06)
     return fadeIn * fadeOut
   }, [t2])
 

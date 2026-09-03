@@ -56,9 +56,9 @@ export default function Hotspots({ t1, t2, activePart, onPartClick, partObjectsR
     return () => { if (raf.current) cancelAnimationFrame(raf.current) }
   }, [partObjectsRef])
 
-  // Visibility — only when glasses settled and sunglasses not started
+  // Visibility — only after the glasses rotation completes (t1 >= 0.86)
   useEffect(() => {
-    const glassesSettled = t1 >= 0.999 && t2 <= 0
+    const glassesSettled = t1 >= 0.86 && t2 <= 0
     setVisible(glassesSettled && !activePart)
   }, [t1, t2, activePart])
 

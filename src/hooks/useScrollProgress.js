@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-const CH1_END = 0.5 // first half of spacer = glasses chapter
+const CH1_END = 0.5 // even split — each model gets the same long, slow rotation
 
 /* Split-in-half intro hero: occupies the first INTRO_VH of scroll before the
    3D journey starts, so the existing experience plays unchanged afterward. */
