@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
@@ -43,24 +43,32 @@ function loadOnce() {
 export function useGlassesModel() {
   const [scene, setScene] = useState(null)
   const [progress, setProgress] = useState(lastProgress)
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let alive = true
     let retries = 0
     const onProgress = (p) => { if (alive) setProgress(p) }
     listeners.add(onProgress)
-    const attempt = () => {
+    setFailed(false)
+    const go = () => {
       loadOnce()
         .then((s) => { if (alive) setScene(s) })
         .catch(() => {
-          if (!alive || retries >= 2) return
+          if (!alive) return
+          if (retries >= 2) {
+            setFailed(true) // surface it — never hang silently on the loading screen
+            return
+          }
           retries += 1
-          setTimeout(attempt, 2500)
+          setTimeout(go, 2500)
         })
     }
-    attempt()
+    go()
     return () => { alive = false; listeners.delete(onProgress) }
-  }, [])
+  }, [attempt])
 
-  return { scene, progress }
+  const retry = useCallback(() => setAttempt(n => n + 1), [])
+  return { scene, progress, failed, retry }
 }
