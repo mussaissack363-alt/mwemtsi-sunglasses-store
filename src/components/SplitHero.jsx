@@ -84,16 +84,27 @@ export default function SplitHero() {
   )
   const starsRef = useRef(null)
 
-  /* progress from scroll */
+  /* progress from scroll — listener detaches itself once the intro finishes,
+     so the finished hero doesn't keep doing rAF state updates on every scroll */
   useEffect(() => {
     let raf
+    let done = false
     const onScroll = () => {
+      if (done) return
       if (raf) cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => setP(introProgress()))
+      raf = requestAnimationFrame(() => {
+        const v = introProgress()
+        setP(v)
+        if (v >= 1) {
+          done = true
+          window.removeEventListener('scroll', onScroll)
+        }
+      })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => {
+      done = true
       window.removeEventListener('scroll', onScroll)
       if (raf) cancelAnimationFrame(raf)
     }

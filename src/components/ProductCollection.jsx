@@ -14,14 +14,20 @@ function bandOpacity(p, inStart, inEnd, outStart, outEnd) {
 }
 
 export default function ProductCollection({ activePart, products, onProductClick, variant = 'bottom', t2 = 1 }) {
-  /* Real-time clock so the end-of-scroll groups reveal one every 3s */
+  /* Real-time clock so the end-of-scroll groups reveal one every 3s.
+     The interval stops itself once every card has finished fading in. */
   const startRef = useRef(Date.now())
   const [clock, setClock] = useState(Date.now())
 
   useEffect(() => {
-    const id = setInterval(() => setClock(Date.now()), 100)
+    const total = CENTER_GROUPS.reduce((n, g) => n + (products[g]?.length || 0), 0)
+    const end = startRef.current + total * CENTER_STAGGER_MS + FADE_IN_MS + 100
+    const id = setInterval(() => {
+      if (Date.now() >= end) { clearInterval(id); return }
+      setClock(Date.now())
+    }, 100)
     return () => clearInterval(id)
-  }, [])
+  }, [products])
 
   const collectionPart = useMemo(() => {
     if (activePart && activePart !== 'sunglasses') return activePart
@@ -125,12 +131,14 @@ export default function ProductCollection({ activePart, products, onProductClick
     )
   }
 
-  /* ─── Bottom strip (glasses chapter) ── */
+  /* Bottom strip (glasses chapter). max-sm:pr-[72px] keeps the strip clear of
+     the WhatsApp bubble (46px + 16px inset + breathing room) so the last card
+     is fully tappable on phones. */
   const isVisible = items.length > 0
 
   return (
     <div
-      className="fixed left-0 right-0 bottom-0 z-[16] flex justify-center pointer-events-none px-4 pb-6"
+      className="fixed left-0 right-0 bottom-0 z-[16] flex justify-center pointer-events-none px-4 pb-6 max-sm:pr-[72px]"
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateY(0)' : 'translateY(20px)',

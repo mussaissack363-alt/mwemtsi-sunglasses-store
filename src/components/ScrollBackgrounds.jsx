@@ -3,6 +3,12 @@ import CommercialBackdrop from './CommercialBackdrop'
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 
+/* Phones render the backdrop in lite mode: no film-grain feTurbulence and
+   softer blurs (full-screen SVG filters are very expensive on mobile GPUs). */
+const IS_SMALL_SCREEN =
+  typeof window !== 'undefined' && window.matchMedia?.('(max-width: 820px)')?.matches === true
+const LITE = IS_SMALL_SCREEN
+
 /* Fixed backdrop layers behind the (transparent) 3D canvas:
    - glasses chapter: fades in as the hero starfield fades out (t1)
    - sunglasses chapter: fades in during the chapter transition (t2)
@@ -17,11 +23,11 @@ export default function ScrollBackgrounds({ t1, t2 }) {
     <>
       {/* Glasses chapter — warm dusk commercial stage */}
       <div className="fixed inset-0" aria-hidden="true" style={{ zIndex: -1, opacity: glassesO }}>
-        <CommercialBackdrop />
+        <CommercialBackdrop lite={LITE} uid="dusk" />
       </div>
       {/* Sunglasses chapter — same golden-hour world, slightly hotter */}
       <div className="fixed inset-0" aria-hidden="true" style={{ zIndex: -1, opacity: sunO }}>
-        <CommercialBackdrop hot />
+        <CommercialBackdrop hot lite={LITE} uid="gold" />
       </div>
       {/* Outro — behind the end-of-scroll products popup */}
       <div

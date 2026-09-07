@@ -101,7 +101,7 @@ export default function Drawer({ activePart, onClose, products, onRemove, onAdd,
     <>
       {/* Drawer */}
       <div
-        className={`fixed left-0 right-0 bottom-0 z-[18] border-t border-onyx-line transition-all duration-[550ms] max-h-[44vh] ${
+        className={`fixed left-0 right-0 bottom-0 z-[18] border-t border-onyx-line transition-all duration-[550ms] max-h-[44vh] max-sm:max-h-[52vh] ${
           isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
         }`}
         style={{
@@ -127,8 +127,9 @@ export default function Drawer({ activePart, onClose, products, onRemove, onAdd,
           </button>
         </div>
 
-        {/* Product row */}
-        <div className="flex gap-3.5 overflow-x-auto pb-1.5 px-6 max-sm:px-4 scroll-smooth" style={{ scrollSnapType: 'x proximity' }}>
+        {/* Product row — extra bottom padding on phones so the cards clear the
+            floating admin (bottom-left) and WhatsApp (bottom-right) buttons */}
+        <div className="flex gap-3.5 overflow-x-auto pb-1.5 px-6 max-sm:px-4 max-sm:pb-14 scroll-smooth" style={{ scrollSnapType: 'x proximity' }}>
           {items.map((p) => (
             <div
               key={p.id}

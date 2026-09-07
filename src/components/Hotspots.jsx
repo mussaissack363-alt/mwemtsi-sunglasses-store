@@ -8,6 +8,9 @@ export default function Hotspots({ t1, t2, activePart, onPartClick, partObjectsR
   const [visible, setVisible] = useState(false)
   const raf = useRef(null)
   const cameraRef = useRef(null)
+  const lastPositions = useRef({})
+  const scratchBox = useRef(null)
+  const projVec = useRef(null)
 
   // Get camera from R3F store
   useEffect(() => {
@@ -24,11 +27,13 @@ export default function Hotspots({ t1, t2, activePart, onPartClick, partObjectsR
 
   // Project 3D positions to screen space each frame — only while visible.
   // (A permanent rAF loop here burned battery even when hotspots were hidden.)
+  // React state only updates when a pill actually moves >1px or its
+  // behind-camera flag flips, so we don't re-render 60×/s while nothing changes.
   useEffect(() => {
     if (!visible) return
 
-    const projVec = new THREE.Vector3()
-    const box = new THREE.Box3()
+    if (!scratchBox.current) scratchBox.current = new THREE.Box3()
+    if (!projVec.current) projVec.current = new THREE.Vector3()
 
     const update = () => {
       const cam = cameraRef.current
@@ -38,20 +43,31 @@ export default function Hotspots({ t1, t2, activePart, onPartClick, partObjectsR
         return
       }
 
+      const box = scratchBox.current
+      const w = window.innerWidth
+      const h = window.innerHeight
+      let changed = false
       const newPositions = {}
       Object.entries(parts).forEach(([id, objs]) => {
-        box.copy(new THREE.Box3())
-        objs.forEach((o, i) => {
-          const b = new THREE.Box3().setFromObject(o)
-          if (i === 0) box.copy(b); else box.union(b)
-        })
-        box.getCenter(projVec)
-        projVec.project(cam)
-        const x = (projVec.x * 0.5 + 0.5) * window.innerWidth
-        const y = (-projVec.y * 0.5 + 0.5) * window.innerHeight
-        newPositions[id] = { x, y, behind: projVec.z >= 1 }
+        box.makeEmpty()
+        objs.forEach((o) => box.expandByObject(o))
+        box.getCenter(projVec.current)
+        projVec.current.project(cam)
+        const x = (projVec.current.x * 0.5 + 0.5) * w
+        const y = (-projVec.current.y * 0.5 + 0.5) * h
+        const behind = projVec.current.z >= 1
+        const prev = lastPositions.current[id]
+        if (!prev || prev.behind !== behind || Math.abs(prev.x - x) > 1 || Math.abs(prev.y - y) > 1) {
+          newPositions[id] = { x, y, behind }
+          changed = true
+        } else {
+          newPositions[id] = prev
+        }
       })
-      setPositions(newPositions)
+      if (changed) {
+        lastPositions.current = newPositions
+        setPositions(newPositions)
+      }
       raf.current = requestAnimationFrame(update)
     }
 

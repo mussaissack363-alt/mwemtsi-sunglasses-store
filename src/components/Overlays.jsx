@@ -24,6 +24,10 @@ export function HeroStarfield({ t1 }) {
   }, [])
 
   const e1 = smoothstep(t1)
+  // Unmount once fully faded — a fixed full-screen layer with 90 children
+  // still costs compositing even at opacity 0. Remounts (and re-creates the
+  // stars) if the user scrolls back up.
+  if (e1 >= 0.999) return null
   return (
     <div
       ref={ref}
@@ -105,7 +109,7 @@ export function ShopInfo({ t1, t2 }) {
 
   return (
     <div
-      className="fixed top-6 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none"
+      className="fixed top-6 max-sm:top-16 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none"
       style={{
         opacity: reveal,
         transition: 'opacity 0.3s ease',

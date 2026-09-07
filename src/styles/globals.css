@@ -5,6 +5,8 @@
 @layer base {
   html, body {
     background: #000;
+    /* Stop pull-to-refresh / rubber-band hijacking mid-story on touch devices */
+    overscroll-behavior-y: contain;
   }
 
   :root {

@@ -441,8 +441,12 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
     applyTint(keyRef.current, fillRef.current, rimRef.current, ambRef.current,
       isInspectingFrame ? 1 : 0, isInspectingLens ? 1 : 0)
 
-    /* Model swap early in the chapter, hidden under the transition fade (t2 >= 0.30) */
-    const showSun = t2 >= 0.30
+    /* Model swap early in the chapter, hidden under the transition fade (t2 >= 0.30).
+       Gated on the sun model actually being loaded — on slow mobile connections
+       the user can reach the chapter before the swap file arrives, and showing
+       an empty stage would look broken. The glasses simply stay up a moment
+       longer and swap the instant the load completes. */
+    const showSun = t2 >= 0.30 && !!sunModelRoot
     if (showSun && modelRoot.visible) {
       modelRoot.visible = false
       if (sunModelRoot) sunModelRoot.visible = true
