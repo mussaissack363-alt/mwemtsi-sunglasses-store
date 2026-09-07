@@ -9,6 +9,7 @@ import { Logo, WhatsAppButton } from './components/Header'
 import Loading from './components/Loading'
 import { useScrollProgress, INTRO_VH } from './hooks/useScrollProgress'
 import { useProducts } from './hooks/useProducts'
+import { useGlassesModel } from './hooks/useModelProgress'
 import SplitHero from './components/SplitHero'
 import ScrollBackgrounds from './components/ScrollBackgrounds'
 
@@ -16,6 +17,7 @@ export default function App() {
   const spacerRef = useRef()
   const { progress, t1, t2 } = useScrollProgress(spacerRef)
   const { products, removeProduct, addProduct, updateProduct } = useProducts()
+  const { scene: glassesScene, progress: modelProgress } = useGlassesModel()
 
   const [modelReady, setModelReady] = useState(false)
   const [activePart, setActivePart] = useState(null)
@@ -44,7 +46,7 @@ export default function App() {
 
   return (
     <>
-      <Loading ready={modelReady} />
+      <Loading ready={modelReady} progress={modelProgress} />
 
       {/* Split-in-half intro hero — plays before the 3D journey starts */}
       <SplitHero />
@@ -64,6 +66,7 @@ export default function App() {
           onModelReady={handleModelReady}
           onPartClick={handlePartClick}
           requestResetView={requestResetView}
+          glassesScene={glassesScene}
         />
       </Suspense>
 

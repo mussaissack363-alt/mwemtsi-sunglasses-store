@@ -59,3 +59,14 @@
     background: rgba(201, 162, 74, 0.06);
   }
 }
+
+/* Mobile scroll fix: OrbitControls stamps `touch-action: none` on the canvas
+   container when it connects (even while disabled), which blocks ALL native
+   scrolling on touch devices — the scroll-driven page gets stuck at the intro.
+   `pan-y !important` overrides that inline style: vertical swipes scroll the
+   story again, while horizontal drags still reach OrbitControls for orbiting. */
+.scene-stage,
+.scene-stage > div,
+.scene-stage canvas {
+  touch-action: pan-y !important;
+}

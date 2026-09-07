@@ -22,8 +22,11 @@ export default function Hotspots({ t1, t2, activePart, onPartClick, partObjectsR
     return () => clearInterval(check)
   }, [])
 
-  // Project 3D positions to screen space each frame
+  // Project 3D positions to screen space each frame — only while visible.
+  // (A permanent rAF loop here burned battery even when hotspots were hidden.)
   useEffect(() => {
+    if (!visible) return
+
     const projVec = new THREE.Vector3()
     const box = new THREE.Box3()
 
@@ -54,7 +57,7 @@ export default function Hotspots({ t1, t2, activePart, onPartClick, partObjectsR
 
     raf.current = requestAnimationFrame(update)
     return () => { if (raf.current) cancelAnimationFrame(raf.current) }
-  }, [partObjectsRef])
+  }, [partObjectsRef, visible])
 
   // Visibility — only after the glasses rotation completes (t1 >= 0.86)
   useEffect(() => {

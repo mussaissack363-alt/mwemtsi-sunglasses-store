@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect, useState, useCallback } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useGLTF, OrbitControls, RoundedBox, Environment, Lightformer } from '@react-three/drei'
+import { OrbitControls, RoundedBox, Environment, Lightformer } from '@react-three/drei'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as THREE from 'three'
 
@@ -187,7 +187,7 @@ function unionBox(objs) {
 }
 
 /* ─── Inner scene ─────────────────────────────────────────── */
-function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, requestResetView }) {
+function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, requestResetView, glassesScene }) {
   const { camera } = useThree()
   const controlsRef = useRef()
   const keyRef = useRef()
@@ -205,9 +205,8 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
 
   const [modelSwappedToSun, setModelSwappedToSun] = useState(false)
 
-  /* ---- Load glasses model ---- */
-  const { scene: glassesScene } = useGLTF(import.meta.env.BASE_URL + 'glasses(1).glb')
-  const modelRoot = useMemo(() => glassesScene, [glassesScene])
+  /* ---- Load glasses model (scene arrives preloaded via prop, with progress) ---- */
+  const modelRoot = glassesScene
 
   /* ---- Load sunglasses model ---- */
   const [sunModelRoot, setSunModelRoot] = useState(null)
@@ -566,27 +565,37 @@ function applyTint(key, fill, rim, amb, frameW, lensW) {
 }
 
 /* ─── Exported wrapper ────────────────────────────────────── */
-export default function Scene({ t1, t2, activePart, onModelReady, onPartClick, requestResetView }) {
+// Phones/tablets render at a lower pixel-ratio cap — dpr 2 + shadows + the
+// full-screen SVG grain backdrop is too heavy for mobile GPUs.
+const IS_SMALL_SCREEN = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 820px)')?.matches === true
+
+export default function Scene({ t1, t2, activePart, onModelReady, onPartClick, requestResetView, glassesScene }) {
   const handleHotspot = (partId) => {
     if (partId) onPartClick?.(partId)
   }
 
   return (
-    <div className="fixed inset-0 z-0">
+    <div className="scene-stage fixed inset-0 z-0">
       <Canvas
         camera={{ fov: 35, near: 0.01, far: 100, position: [0, 0, 5] }}
         gl={{ antialias: true, alpha: true }}
         shadows
-        dpr={[1, 2]}
+        dpr={[1, IS_SMALL_SCREEN ? 1.5 : 2]}
         onCreated={({ gl }) => { gl.outputColorSpace = THREE.SRGBColorSpace }}
       >
-        <SceneInner
-          t1={t1} t2={t2}
-          activePart={activePart}
-          onModelReady={onModelReady}
-          onHotspotsReady={handleHotspot}
-          requestResetView={requestResetView}
-        />
+        {/* Mount the scene only once the glasses model has downloaded —
+            SceneInner dereferences it immediately, and the Loading overlay
+            covers the wait */}
+        {glassesScene && (
+          <SceneInner
+            t1={t1} t2={t2}
+            activePart={activePart}
+            onModelReady={onModelReady}
+            onHotspotsReady={handleHotspot}
+            requestResetView={requestResetView}
+            glassesScene={glassesScene}
+          />
+        )}
       </Canvas>
     </div>
   )
