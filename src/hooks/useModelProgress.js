@@ -2,10 +2,10 @@ import { useEffect, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
-// Cache raw downloads so StrictMode remounts and retries don't re-fetch 9 MB
+// Cache raw downloads so StrictMode remounts and retries don't re-fetch
 THREE.Cache.enabled = true
 
-const MODEL_URL = import.meta.env.BASE_URL + 'glasses(1).glb'
+const MODEL_URL = import.meta.env.BASE_URL + 'glasses_opt.glb'
 
 let scenePromise = null
 const listeners = new Set()

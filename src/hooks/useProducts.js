@@ -1,6 +1,10 @@
-import { useState, useCallback } from 'react'
-
-const STORAGE_KEY = 'onyx_products_v2'
+import { useState, useEffect, useCallback } from 'react'
+import {
+  collection, doc, onSnapshot,
+  setDoc, updateDoc, deleteDoc, serverTimestamp, getDocs
+} from 'firebase/firestore'
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage'
+import { db, storage } from '../firebase'
 
 const DEFAULT_PRODUCTS = {
   frame: [
@@ -21,47 +25,92 @@ const DEFAULT_PRODUCTS = {
   ],
 }
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return JSON.parse(JSON.stringify(DEFAULT_PRODUCTS))
+/* Upload a base64 image to Firebase Storage, return the download URL */
+async function uploadImage(id, base64DataUrl) {
+  if (!base64DataUrl || !base64DataUrl.startsWith('data:')) return base64DataUrl
+  const storageRef = ref(storage, `products/${id}`)
+  await uploadString(storageRef, base64DataUrl, 'data_url')
+  return getDownloadURL(storageRef)
+}
+
+async function deleteImage(id) {
+  try { await deleteObject(ref(storage, `products/${id}`)) } catch {}
 }
 
 export function useProducts() {
-  const [products, setProducts] = useState(load)
+  const [products, setProducts] = useState({ frame: [], lenses: [], sunglasses: [] })
+  const [seeded, setSeeded] = useState(false)
 
-  const save = useCallback((p) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(p))
+  /* Real-time listener across all three part collections */
+  useEffect(() => {
+    const parts = ['frame', 'lenses', 'sunglasses']
+    const unsubs = parts.map((part) =>
+      onSnapshot(
+        collection(db, 'products', part, 'items'),
+        (snap) => {
+          const items = snap.docs
+            .map((d) => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0))
+          setProducts((prev) => ({ ...prev, [part]: items }))
+        },
+        (err) => console.warn('Firestore listener error:', err.message)
+      )
+    )
+    return () => unsubs.forEach((u) => u())
   }, [])
 
-  const removeProduct = useCallback((partId, productId) => {
-    setProducts(prev => {
-      const next = { ...prev, [partId]: prev[partId].filter(x => x.id !== productId) }
-      save(next)
-      return next
-    })
-  }, [save])
+  /* Seed defaults on first load if Firestore is empty */
+  useEffect(() => {
+    if (seeded) return
+    const parts = ['frame', 'lenses', 'sunglasses']
+    Promise.all(
+      parts.map((part) =>
+        getDocs(collection(db, 'products', part, 'items'))
+          .then((snap) => ({ part, empty: snap.empty }))
+          .catch(() => ({ part, empty: false })) // don't seed if we can't read
+      )
+    ).then((results) => {
+      const writes = []
+      results.forEach(({ part, empty }) => {
+        if (empty) {
+          DEFAULT_PRODUCTS[part].forEach((p) => {
+            writes.push(
+              setDoc(doc(db, 'products', part, 'items', p.id), {
+                name: p.name, price: p.price, color: p.color, image: p.image || '',
+                createdAt: serverTimestamp(),
+              }).catch(() => {})
+            )
+          })
+        }
+      })
+      return Promise.all(writes)
+    }).then(() => setSeeded(true)).catch(() => setSeeded(true))
+  }, [seeded])
 
-  const addProduct = useCallback((partId, product) => {
-    setProducts(prev => {
-      const next = { ...prev, [partId]: [...(prev[partId] || []), { ...product, id: 'p' + Date.now() }] }
-      save(next)
-      return next
-    })
-  }, [save])
+  const removeProduct = useCallback(async (partId, productId) => {
+    await deleteDoc(doc(db, 'products', partId, 'items', productId))
+    await deleteImage(productId)
+  }, [])
 
-  const updateProduct = useCallback((partId, productId, patch) => {
-    setProducts(prev => {
-      const next = {
-        ...prev,
-        [partId]: (prev[partId] || []).map(x => x.id === productId ? { ...x, ...patch, id: productId } : x),
-      }
-      save(next)
-      return next
+  const addProduct = useCallback(async (partId, product) => {
+    const id = 'p' + Date.now()
+    const imageUrl = await uploadImage(id, product.image)
+    await setDoc(doc(db, 'products', partId, 'items', id), {
+      name: product.name, price: product.price, color: product.color,
+      image: imageUrl || '',
+      createdAt: serverTimestamp(),
     })
-  }, [save])
+  }, [])
+
+  const updateProduct = useCallback(async (partId, productId, patch) => {
+    const imageUrl = patch.image?.startsWith('data:')
+      ? await uploadImage(productId, patch.image)
+      : patch.image
+    await updateDoc(doc(db, 'products', partId, 'items', productId), {
+      name: patch.name, price: patch.price, color: patch.color,
+      image: imageUrl || '',
+    })
+  }, [])
 
   return { products, removeProduct, addProduct, updateProduct }
 }

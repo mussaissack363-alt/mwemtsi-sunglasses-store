@@ -165,7 +165,18 @@ export default function Drawer({ activePart, onClose, products, onRemove, onAdd,
               )}
               <div className="p-2.5 px-3 pb-3">
                 <p className="text-[12.5px] font-semibold m-0 text-onyx-text">{p.name}</p>
-                <p className="text-xs text-onyx-accent mt-0.5 mb-0">{p.price}</p>
+                <p className="text-xs text-onyx-accent mt-0.5 mb-2">{p.price}</p>
+                {!adminMode && (
+                  <a
+                    href={`https://wa.me/255753474748?text=Hi%2C%20I%27d%20like%20to%20order%20the%20*${encodeURIComponent(p.name)}*%20(${encodeURIComponent(p.price)})`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center py-1.5 rounded border border-onyx-accent text-onyx-accent text-[11px] tracking-wide no-underline hover:bg-onyx-accent hover:text-[#181206] transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Order
+                  </a>
+                )}
               </div>
             </div>
           ))}
@@ -245,8 +256,8 @@ export default function Drawer({ activePart, onClose, products, onRemove, onAdd,
 
       {/* Add / Edit Product Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/70 z-[40] flex items-center justify-center">
-          <div className="bg-onyx-panel border border-onyx-line rounded-lg p-5 w-[280px] max-sm:w-[calc(100vw-32px)]">
+        <div className="fixed inset-0 bg-black/70 z-[40] flex items-end justify-center sm:items-center overflow-y-auto">
+          <div className="bg-onyx-panel border border-onyx-line rounded-t-2xl sm:rounded-lg p-5 w-full sm:w-[280px] max-h-[90dvh] overflow-y-auto pb-safe">
             <h3 className="m-0 mb-3.5 text-sm font-medium text-onyx-text">
               {editing ? 'Edit product' : 'Add product'}
             </h3>
@@ -281,11 +292,21 @@ export default function Drawer({ activePart, onClose, products, onRemove, onAdd,
                 <div className="w-12 h-12 rounded border border-dashed border-onyx-line flex items-center justify-center text-onyx-muted text-[10px]">none</div>
               )}
               <label className="btn-ghost px-3 py-2 text-[11.5px] rounded-full cursor-pointer inline-block">
-                {form.image ? 'Change photo' : 'Upload photo'}
+                {form.image ? 'Gallery' : 'Upload photo'}
                 <input
                   className="hidden"
                   type="file"
                   accept="image/*"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = '' }}
+                />
+              </label>
+              <label className="btn-ghost px-3 py-2 text-[11.5px] rounded-full cursor-pointer inline-block">
+                📷 Camera
+                <input
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = '' }}
                 />
               </label>

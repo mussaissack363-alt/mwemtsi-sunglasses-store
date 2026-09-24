@@ -37,14 +37,6 @@ export default function Outro({ progress, t2 }) {
           >
             +255 753 474 748
           </a>
-          <a
-            href="https://wa.me/255695525257?text=Hello%2C%20I%27d%20like%20to%20know%20more"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[12px] text-onyx-text no-underline hover:text-onyx-accent transition-colors"
-          >
-            +255 695 525 257
-          </a>
         </div>
       </div>
     </div>

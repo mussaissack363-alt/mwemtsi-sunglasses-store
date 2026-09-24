@@ -2,7 +2,8 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-const PARTICLE_COUNT = 120
+const IS_MOBILE = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 480px)')?.matches === true
+const PARTICLE_COUNT = IS_MOBILE ? 40 : 120
 const DRIFT_SPEED = 0.06
 const SPREAD = 14
 
@@ -51,6 +52,7 @@ export default function LiveBackground({ progress = 0 }) {
   const meshRef = useRef()
   const wireRef = useRef()
   const timeRef = useRef(0)
+  const frameSkip = useRef(0)
 
   const { positions, scales, speeds, offsets } = useMemo(
     () => generateParticleData(PARTICLE_COUNT),
@@ -84,6 +86,10 @@ export default function LiveBackground({ progress = 0 }) {
   }, [positions, scales])
 
   useFrame((state, delta) => {
+    // On mobile, update particles every other frame to halve GPU load
+    frameSkip.current = (frameSkip.current + 1) % 2
+    if (IS_MOBILE && frameSkip.current !== 0) return
+
     timeRef.current += delta
     const t = timeRef.current
     const mesh = meshRef.current

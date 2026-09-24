@@ -10,6 +10,7 @@ import Loading from './components/Loading'
 import { useScrollProgress, INTRO_VH } from './hooks/useScrollProgress'
 import { useProducts } from './hooks/useProducts'
 import { useGlassesModel } from './hooks/useModelProgress'
+import Footer from './components/Footer'
 import SplitHero from './components/SplitHero'
 import ScrollBackgrounds from './components/ScrollBackgrounds'
 
@@ -127,6 +128,8 @@ export default function App() {
         onAdd={addProduct}
         onUpdate={updateProduct}
       />
+
+      <Footer />
     </>
   )
 }

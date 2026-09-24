@@ -4,6 +4,9 @@ import { OrbitControls, RoundedBox, Environment, Lightformer } from '@react-thre
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import * as THREE from 'three'
 
+const IS_SMALL_SCREEN = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 820px)')?.matches === true
+const IS_MOBILE = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 480px)')?.matches === true
+
 /* ─── Part node mapping ───────────────────────────────────── */
 const PART_NODES = { frame: ['Frame_1', 'Handles_2'], lenses: ['Glasses_3'] }
 
@@ -132,9 +135,9 @@ function makeFloorTexture(size = 512) {
   return tex
 }
 
-const plinthTexture = makeTravertineTexture()
-const palmTexture = makePalmTexture()
-const floorTexture = makeFloorTexture()
+const plinthTexture = makeTravertineTexture(IS_MOBILE ? 256 : 512)
+const palmTexture = makePalmTexture(IS_MOBILE ? 256 : 512)
+const floorTexture = makeFloorTexture(IS_MOBILE ? 256 : 512)
 
 /* ─── Tint presets for frame / lens inspection (golden hour) ─ */
 const NEUTRAL_TINT = {
@@ -208,16 +211,21 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
   /* ---- Load glasses model (scene arrives preloaded via prop, with progress) ---- */
   const modelRoot = glassesScene
 
-  /* ---- Load sunglasses model ---- */
+  /* ---- Load sunglasses model — deferred until glasses chapter is nearly done ---- */
   const [sunModelRoot, setSunModelRoot] = useState(null)
+  const sunLoadStarted = useRef(false)
 
   useEffect(() => {
+    // Only start loading when the user is 60% through chapter 1 — avoids
+    // competing with the primary model download on slow mobile connections
+    if (t1 < 0.6 || sunLoadStarted.current) return
+    sunLoadStarted.current = true
     const loader = new GLTFLoader()
     loader.load(import.meta.env.BASE_URL + 'sun_glasses.glb', (gltf) => {
       gltf.scene.visible = false
       setSunModelRoot(gltf.scene)
     }, undefined, () => {})
-  }, [])
+  }, [t1])
 
   /* ---- Premium material rework for the sunglasses ---- */
   useEffect(() => {
@@ -353,12 +361,12 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
           if (nodeToPart[p.name]) p.userData.partId = nodeToPart[p.name]
           p = p.parent
         }
-        child.castShadow = true
+        child.castShadow = !IS_MOBILE
       }
     })
     if (sunModelRoot) {
       sunModelRoot.visible = false
-      sunModelRoot.traverse((child) => { if (child.isMesh) child.castShadow = true })
+      sunModelRoot.traverse((child) => { if (child.isMesh) child.castShadow = !IS_MOBILE })
     }
     onModelReady?.()
   }, [modelRoot, sunModelRoot, onModelReady])
@@ -479,9 +487,9 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
       {/* Golden-hour lights — low key light, warm bounces */}
       <directionalLight
         ref={keyRef} position={[3, 1.3, 2.6]} intensity={2.5}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        castShadow={!IS_MOBILE}
+        shadow-mapSize-width={IS_SMALL_SCREEN ? 512 : 1024}
+        shadow-mapSize-height={IS_SMALL_SCREEN ? 512 : 1024}
         shadow-camera-left={-2.5}
         shadow-camera-right={2.5}
         shadow-camera-top={2.5}
@@ -508,7 +516,7 @@ function SceneInner({ t1, t2, activePart, onModelReady, onHotspotsReady, request
 
       {/* Commercial studio environment — warm key, fill and rim lightformers give the
           models realistic golden-hour reflections (rendered once, off-screen) */}
-      <Environment resolution={256} frames={1}>
+      <Environment resolution={IS_MOBILE ? 64 : 256} frames={1}>
         <Lightformer form="rect" intensity={5} color="#ffdfa6" position={[3, 2.2, 3]} scale={[4, 2, 1]} />
         <Lightformer form="rect" intensity={2.2} color="#ffc98f" position={[-3.5, 1, 2]} scale={[5, 3, 1]} />
         <Lightformer form="rect" intensity={1.6} color="#ffe7c4" position={[0, 1.6, -4]} scale={[7, 2.5, 1]} />
@@ -571,7 +579,6 @@ function applyTint(key, fill, rim, amb, frameW, lensW) {
 /* ─── Exported wrapper ────────────────────────────────────── */
 // Phones/tablets render at a lower pixel-ratio cap — dpr 2 + shadows + the
 // full-screen SVG grain backdrop is too heavy for mobile GPUs.
-const IS_SMALL_SCREEN = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 820px)')?.matches === true
 
 export default function Scene({ t1, t2, activePart, onModelReady, onPartClick, requestResetView, glassesScene }) {
   const handleHotspot = (partId) => {
@@ -582,9 +589,9 @@ export default function Scene({ t1, t2, activePart, onModelReady, onPartClick, r
     <div className="scene-stage fixed inset-0 z-0">
       <Canvas
         camera={{ fov: 35, near: 0.01, far: 100, position: [0, 0, 5] }}
-        gl={{ antialias: true, alpha: true }}
-        shadows
-        dpr={[1, IS_SMALL_SCREEN ? 1.5 : 2]}
+        gl={{ antialias: !IS_MOBILE, alpha: true, powerPreference: 'high-performance' }}
+        shadows={!IS_MOBILE}
+        dpr={IS_MOBILE ? 1 : [1, IS_SMALL_SCREEN ? 1.5 : 2]}
         onCreated={({ gl }) => { gl.outputColorSpace = THREE.SRGBColorSpace }}
       >
         {/* Mount the scene only once the glasses model has downloaded —
